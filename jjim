@@ -1,0 +1,107 @@
+import re
+from collections import defaultdict
+
+# Lista de tokens con su respectiva expresión regular para identificar diferentes componentes del código
+TOKENS = [
+    ("CLAVES", r'\b(if|else|while|for|return|break|continue|def|class|print|int)\b'),  # Palabras clave de Python
+    ("IDENTIFICADORES", r'\b[a-zA-Z_]\w*\b'),                                # Identificadores válidos
+    ("NUMEROS", r'\b\d+(\.\d+)?\b'),                                         # Números enteros y decimales
+    ("OPERADORES", r'[+\-*/%=<>!&|^~]'),                                     # Operadores aritméticos y lógicos
+    ("STRING", r'"[^"\\]*(\\.[^"\\]*)*"'),                                   # Cadenas de texto con escapado
+    ("SALTOS DE LINEA", r'\n'),                                              # Saltos de línea
+    ("ESPACIOS", r'[ \t]+'),                                                 # Espacios y tabulaciones
+    ("COMENTARIOS", r'#.*'),                                                 # Comentarios de línea
+    ("DELIMITADORES", r'[(){}[\],.;:]'),                                     # Delimitadores como paréntesis y comas
+]
+
+def tokenize(code):
+    """
+    Función que toma un código fuente como entrada y devuelve los tokens identificados por categorías.
+
+    Args:
+        code (str): Código fuente a analizar.
+
+    Returns:
+        defaultdict(list): Diccionario con los tokens clasificados por categorías.
+    """
+    tokens = defaultdict(list)  # Diccionario que almacenará los tokens categorizados
+    position = 0  # Posición actual en el código fuente
+
+    # Recorre el código fuente mientras queden caracteres por analizar
+    while position < len(code):
+        match = None  # Variable para almacenar la coincidencia del token
+        # Itera sobre las categorías de tokens
+        for token_type, token_regex in TOKENS:
+            regex = re.compile(token_regex)  # Compila la expresión regular actual
+            match = regex.match(code, position)  # Busca coincidencias en la posición actual
+            if match:
+                # Si el token no es un espacio o un comentario, lo almacena en el diccionario
+                if token_type not in ["ESPACIOS", "COMENTARIOS"]:
+                    tokens[token_type].append(match.group(0))
+                position = match.end(0)  # Actualiza la posición para seguir analizando
+                break  # Si se encuentra un token, se sale del ciclo para evitar seguir probando
+
+        # Si no se encuentra un token válido, reporta un error
+        if not match:
+            print(f"Error: Token desconocido en la posición {position}")
+            break
+    
+    return tokens  # Devuelve los tokens encontrados y clasificados
+
+def semantic_analysis(tokens):
+    """
+    Función para realizar un análisis semántico básico en los tokens.
+
+    Args:
+        tokens (defaultdict(list)): Diccionario con los tokens clasificados por categorías.
+
+    Returns:
+        list: Lista de errores semánticos encontrados.
+    """
+    errors = []
+    identifiers = set()  # Conjunto para almacenar identificadores declarados
+    declared_identifiers = set()  # Conjunto para identificar qué variables se han declarado
+
+    # Recorre los tokens para registrar identificadores y declaraciones
+    for token in tokens["IDENTIFICADORES"]:
+        if token not in declared_identifiers:
+            declared_identifiers.add(token)
+
+    # Revisa la consistencia de los identificadores en el código
+    for token in tokens["IDENTIFICADORES"]:
+        if token not in declared_identifiers:
+            errors.append(f"Error: El identificador '{token}' se utiliza antes de ser declarado.")
+    
+    return errors
+
+# Solicita al usuario que ingrese el código a analizar
+print("Por favor, ingrese el código fuente a analizar (deje una línea vacía para finalizar):")
+
+lineas = []  # Lista para almacenar las líneas de código ingresadas por el usuario
+# Bucle para permitir la entrada de múltiples líneas de código
+while True:
+    linea = input()  # Captura la entrada del usuario
+    if linea == "":  # Si se deja una línea vacía, se finaliza la entrada
+        break
+    lineas.append(linea)  # Añade la línea a la lista
+
+codigo_fuente = "\n".join(lineas)  # Une todas las líneas en una cadena de texto
+
+# Llama a la función de tokenización y almacena el resultado
+tokens = tokenize(codigo_fuente)
+
+# Llama a la función de análisis semántico y almacena el resultado
+errors = semantic_analysis(tokens)
+
+# Muestra los tokens identificados agrupados por categoría
+print("\nTokens identificados agrupados por categoría:")
+for token_type, token_values in tokens.items():
+    print(f"{token_type}: {', '.join(token_values)}")
+
+# Muestra los errores semánticos encontrados
+if errors:
+    print("\nErrores semánticos encontrados:")
+    for error in errors:
+        print(error)
+else:
+    print("\nNo se encontraron errores semánticos.")
