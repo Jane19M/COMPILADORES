@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from graphviz import Digraph
 
 # Lista de tokens con su respectiva expresión regular para identificar diferentes componentes del código
 TOKENS = [
@@ -48,35 +49,32 @@ def tokenize(code):
     
     return tokens  # Devuelve los tokens encontrados y clasificados
 
-def semantic_analysis(tokens):
+def generate_syntax_tree_image(tokens, filename="syntax_tree"):
     """
-    Función para realizar un análisis semántico básico en los tokens.
+    Genera un árbol sintáctico y lo guarda como imagen.
 
     Args:
         tokens (defaultdict(list)): Diccionario con los tokens clasificados por categorías.
-
-    Returns:
-        list: Lista de errores semánticos encontrados.
+        filename (str): Nombre del archivo de salida (sin extensión).
     """
-    errors = []
-    variable_types = {}  # Almacena los tipos de los identificadores
+    dot = Digraph(comment="Árbol Sintáctico")
 
-    # Revisa las asignaciones de variables para detectar errores de tipos
-    for i, token in enumerate(tokens["IDENTIFICADORES"]):
-        if i < len(tokens["OPERADORES"]) and tokens["OPERADORES"][i] == "=":
-            # Revisa qué tipo de valor se está asignando (número o cadena)
-            if "NUMEROS" in tokens and tokens["NUMEROS"]:
-                variable_types[token] = "int"
-            elif "STRING" in tokens and tokens["STRING"]:
-                variable_types[token] = "str"
+    # Añade cada tipo de token como un nodo en el gráfico
+    for token_type, token_values in tokens.items():
+        token_node = token_type  # El tipo de token es el nodo principal
+        dot.node(token_node, token_type)  # Crea un nodo para la categoría
+        
+        # Para cada token encontrado, se crea un subnodo
+        for i, token in enumerate(token_values):
+            token_value_node = f"{token_type}_{i}"
+            # Escapar caracteres especiales en el token
+            escaped_token = token.replace('"', '\\"')
+            dot.node(token_value_node, escaped_token)
+            dot.edge(token_node, token_value_node)  # Conecta el tipo de token con su valor
 
-    # Revisa si hay operadores aritméticos entre tipos incompatibles
-    for i, op in enumerate(tokens["OPERADORES"]):
-        if op == "+":
-            if "NUMEROS" in tokens and "STRING" in tokens:
-                errors.append(f"Error: No se puede sumar un número con una cadena en la posición {i}.")
-    
-    return errors
+    # Guarda el gráfico en formato PNG
+    dot.render(filename, format='png')
+    print(f"Árbol sintáctico generado y guardado como {filename}.png")
 
 # Solicita al usuario que ingrese el código a analizar
 print("Por favor, ingrese el código fuente a analizar (deje una línea vacía para finalizar):")
@@ -94,21 +92,14 @@ codigo_fuente = "\n".join(lineas)  # Une todas las líneas en una cadena de text
 # Llama a la función de tokenización y almacena el resultado
 tokens = tokenize(codigo_fuente)
 
-# Llama a la función de análisis semántico y almacena el resultado
-errors = semantic_analysis(tokens)
-
 # Muestra los tokens identificados agrupados por categoría
 print("\nTokens identificados agrupados por categoría:")
 for token_type, token_values in tokens.items():
     print(f"{token_type}: {', '.join(token_values)}")
 
-# Muestra los errores semánticos encontrados
-if errors:
-    print("\nErrores semánticos encontrados:")
-    for error in errors:
-        print(error)
-else:
-    print("\nNo se encontraron errores semánticos.")
+# Genera el árbol sintáctico como una imagen
+generate_syntax_tree_image(tokens, "syntax_tree")
+
 
 
 """
