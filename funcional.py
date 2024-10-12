@@ -1,6 +1,42 @@
+import re
 import ast
 import matplotlib.pyplot as plt
 import networkx as nx
+from collections import defaultdict
+
+# Definición de los tokens
+TOKENS = [
+    ("CLAVES", r'\b(if|else|while|for|return|break|continue|def|class|print|int|float)\b'),  # Palabras clave de Python
+    ("IDENTIFICADORES", r'\b[a-zA-Z_]\w*\b'),                                # Identificadores válidos
+    ("NUMEROS", r'\b\d+(\.\d+)?\b'),                                         # Números enteros y decimales
+    ("OPERADORES", r'[+\-*/%=<>!&|^~]'),                                     # Operadores aritméticos y lógicos
+    ("STRING", r'"[^"\\]*(\\.[^"\\]*)*"'),                                   # Cadenas de texto con escapado
+    ("SALTOS_DE_LINEA", r'\n'),                                              # Saltos de línea
+    ("ESPACIOS", r'[ \t]+'),                                                 # Espacios y tabulaciones
+    ("COMENTARIOS", r'#.*'),                                                 # Comentarios de línea
+    ("DELIMITADORES", r'[(){}[\],.;:]'),                                     # Delimitadores como paréntesis y comas
+]
+
+def tokenize(code):
+    tokens = defaultdict(list)  # Diccionario que almacenará los tokens categorizados
+    position = 0  # Posición actual en el código fuente
+
+    while position < len(code):
+        match = None
+        for token_type, token_regex in TOKENS:
+            regex = re.compile(token_regex)
+            match = regex.match(code, position)
+            if match:
+                if token_type not in ["ESPACIOS"]:
+                    tokens[token_type].append(match.group(0))
+                position = match.end(0)
+                break
+
+        if not match:
+            print(f"Error: Token desconocido en la posición {position}")
+            break
+    
+    return tokens
 
 class SyntaxAnalyzer:
     def __init__(self):
@@ -48,7 +84,7 @@ class SyntaxAnalyzer:
         
         plt.figure(figsize=(10, 6))  # Tamaño de la figura ajustado
         nx.draw(G, pos, labels=labels, with_labels=True, node_size=2000, 
-                node_color='green', font_size=12, font_weight='bold', edge_color='blue', arrows=True)
+                node_color='lightblue', font_size=12, font_weight='bold', edge_color='gray', arrows=True)
         plt.title("Árbol de Sintaxis Abstracta (AST)")
         plt.show()
 
@@ -56,13 +92,12 @@ class SyntaxAnalyzer:
         """Devuelve una etiqueta para el nodo, basada en su valor"""
         if isinstance(node, ast.Constant):
             return str(node.value)  # Mostrar el valor para constantes
-        if isinstance(node, ast.Name):
+        elif isinstance(node, ast.Name):
             return node.id  # Mostrar el nombre de la variable
         elif isinstance(node, ast.BinOp):
             return self.get_operator_symbol(node.op)  # Mostrar el símbolo del operador
         elif isinstance(node, ast.UnaryOp):
             return self.get_operator_symbol(node.op)  # Mostrar el símbolo del operador unario
-        # Otras clases de nodos pueden añadirse aquí
         return type(node).__name__  # Por defecto, usar el tipo
 
     def get_operator_symbol(self, operator):
@@ -80,7 +115,6 @@ class SyntaxAnalyzer:
             ast.BitXor: '^',
             ast.BitAnd: '&',
             ast.FloorDiv: '//',
-            # Agregar más operadores si es necesario
         }
         return operator_mapping.get(type(operator), type(operator).__name__)  # Retornar el símbolo o el nombre
 
@@ -123,6 +157,14 @@ def main():
 
     codigo_fuente = "\n".join(lineas)
 
+    # Análisis léxico
+    tokens = tokenize(codigo_fuente)
+
+    print("\nTokens identificados agrupados por categoría:")
+    for token_type, token_values in tokens.items():
+        print(f"{token_type}: {', '.join(token_values)}")
+
+    # Análisis sintáctico
     analyzer = SyntaxAnalyzer()
     tree = analyzer.analyze(codigo_fuente)
 
@@ -132,3 +174,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
