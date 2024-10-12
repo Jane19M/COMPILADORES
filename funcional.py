@@ -6,7 +6,7 @@ from collections import defaultdict
 
 # Definición de los tokens
 TOKENS = [
-    ("CLAVES", r'\b(if|else|while|for|return|break|continue|def|class|print|int|float)\b'),  # Palabras clave de Python
+    ("CLAVES", r'\b(if|else|while|for|return|break|continue|def|class|print|int|float|input)\b'),  # Palabras clave de Python
     ("IDENTIFICADORES", r'\b[a-zA-Z_]\w*\b'),                                # Identificadores válidos
     ("NUMEROS", r'\b\d+(\.\d+)?\b'),                                         # Números enteros y decimales
     ("OPERADORES", r'[+\-*/%=<>!&|^~]'),                                     # Operadores aritméticos y lógicos
@@ -174,4 +174,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
