@@ -54,6 +54,30 @@ class SyntaxAnalyzer:
             print(f"Detalles del error: {e}")
             return None
 
+    def print_ast(self, node, level=0):
+        """Función recursiva para imprimir el AST en formato de texto."""
+        indent = "  " * level  # Para hacer indentación según el nivel
+        node_type = type(node).__name__
+
+        if isinstance(node, ast.Constant):
+            print(f"{indent}{node_type}: {node.value}")
+        elif isinstance(node, ast.Name):
+            print(f"{indent}{node_type}: {node.id}")
+        elif isinstance(node, ast.BinOp):
+            print(f"{indent}{node_type}: {self.get_operator_symbol(node.op)}")
+        elif isinstance(node, ast.UnaryOp):
+            print(f"{indent}{node_type}: {self.get_operator_symbol(node.op)}")
+        else:
+            print(f"{indent}{node_type}")
+
+        for field, value in ast.iter_fields(node):
+            if isinstance(value, ast.AST):
+                self.print_ast(value, level + 1)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, ast.AST):
+                        self.print_ast(item, level + 1)
+    
     def visualize_ast(self, node):
         """Función para generar el gráfico del árbol AST usando matplotlib y networkx"""
         G = nx.DiGraph()  # Grafo dirigido para representar el AST
@@ -169,7 +193,9 @@ def main():
     tree = analyzer.analyze(codigo_fuente)
 
     if tree is not None:  # Solo genera el gráfico si el análisis fue exitoso
-        print("Generando gráfico del árbol sintáctico...")
+        print("\nÁrbol de Sintaxis Abstracta (AST) en formato de texto:")
+        analyzer.print_ast(tree)  # Imprimir el AST en la consola
+        print("\nGenerando gráfico del árbol sintáctico...")
         analyzer.visualize_ast(tree)
 
 if __name__ == "__main__":
