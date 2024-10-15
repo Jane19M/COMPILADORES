@@ -108,7 +108,7 @@ class SyntaxAnalyzer:
         
         plt.figure(figsize=(10, 6))  # Tamaño de la figura ajustado
         nx.draw(G, pos, labels=labels, with_labels=True, node_size=2000, 
-                node_color='lightblue', font_size=12, font_weight='bold', edge_color='gray', arrows=True)
+                node_color='pink', font_size=12, font_weight='bold', edge_color='gray', arrows=True)
         plt.title("Árbol de Sintaxis Abstracta (AST)")
         plt.show()
 
@@ -200,5 +200,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
